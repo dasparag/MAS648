@@ -1,0 +1,144 @@
+---
+title: "Final Project"
+author: "Dipeeka Bastola, Parag Dassharma, Samira Patel"
+date: "November 20, 2018"
+output: html_document
+---
+
+##Introduction
+
+##Run all Models 
+##Compare Models
+##Graphically show top performers
+
+```{r Read in data}
+data=read.csv("loan_data_cleaned.csv")
+
+```
+
+Split Data into Train and Test
+```{r Split Data}
+smp_size= floor(0.7*nrow(data))
+set.seed(0)
+trainmark <- sample(seq_len(nrow(data)), size = smp_size)
+train <- data[trainmark, ]
+test <- data[-trainmark, ]
+```
+
+Visualize Data (Scatterplot)
+```{r Scatterplot}
+
+```
+
+
+```{r Libraries}
+# Libraries needed
+library(glmnet)
+
+```
+
+
+Generalized Linear Model
+```{r GLM}
+reg_loanglm=glm(loan_status~.-ID,train,family=binomial)
+summary(reg_loanglm)
+```
+d. Calculate the accuracy of the logistic model. (5 points)
+```{r}
+prob=predict(reg_loanglm,test,type="response")
+pred_loanglm=ifelse(prob>0.5,1,0)
+mean(pred_loanglm==test$loan_status)
+```
+
+```{r}
+loan_glmtest=predict(reg_loanglm,newdata=test)
+loan_glmRMSE=sqrt(mean((loan_glmtest-test$loan_status)^2))
+loan_glmRMSE
+```
+
+
+Lasso Regression Model
+
+```{r Lasso}
+myControl1 <- trainControl(method = "cv", number = 10)
+lassomodel=train(loan_status~., train, 
+                 method="glmnet", trControl=myControl1, 
+                 tuneGrid=expand.grid(alpha=1,lambda=seq(.0001,1,length=20)))
+lassotest=predict(lassomodel, newdata=test)
+lassoRMSE=sqrt(mean((lassotest-test$loan_status)^2))
+
+lassoRMSE
+
+```
+
+Ridge Regression Model
+
+```{r Ridge}
+ridgemodel=train(loan_status~., train, method="glmnet", 
+                 trControl=myControl1, 
+                 tuneGrid=expand.grid(alpha=0,lambda=seq(.0001,1,length=20)))
+ridgetest=predict(ridgemodel, newdata=test)
+ridgeRMSE=sqrt(mean((ridgetest-test$loan_status)^2))
+ridgeRMSE
+```
+
+Decision Tree
+
+```{r Decision Tree}
+library(rpart)
+library(ISLR)
+library(rattle)
+# Fit a tree model using rpart
+tree_loan=rpart(loan_status~.-ID, data = train)
+treetest=predict(tree_loan,newdata=test)
+treeRMSE=sqrt(mean((treetest-test$loan_status)^2))
+treeRMSE
+
+# plot tree using fancyRpartPlot()
+fancyRpartPlot(tree_loan)
+
+```
+
+Random Forest with 10 folds
+
+```{r Random Forest}
+library(ranger)
+set.seed(0)
+myControl <- trainControl(
+  method = "cv", number = 10)
+model_loan=train(loan_status~.-ID,train,method="ranger",trControl=myControl,
+      tuneLength=1)
+
+plot(model_loan)
+
+randomforesttest=predict(model_loan,newdata=test)
+rfRMSE=sqrt(mean((randomforesttest-test$loan_status)^2))
+rfRMSE
+```
+
+Ordinary Least Squares Model
+```{r OLS}
+ols=lm(loan_status~.,data=train)
+olstest=predict(ols,newdata=test)
+olsRMSE=sqrt(mean((olstest-test$loan_status)^2))
+olsRMSE
+```
+
+KNN Model
+
+```{r KNN}
+library(kknn)
+set.seed(0)
+Knnmodel=train.kknn(loan_status~.-ID,train)
+summary(Knnmodel)
+Knntest=predict(Knnmodel,newdata=test)
+knnRMSE=sqrt(mean((Knntest-test$loan_status)^2))
+knnRMSE
+```
+
+Comparison of all Models
+
+```{r All Models}
+results=c(1.11794, 1.12580, 2.23680, 1.84762, 1.11946, 1.94660)
+barplot(results, main="Carseat loan_status",ylab="RMSE",names.arg=c("Lasso", "Ridge", 
+                                                          "Tree", "RF", "OLS", "KNN"))
