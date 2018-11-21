@@ -7,10 +7,6 @@ output: html_document
 
 ##Introduction
 
-##Run all Models 
-##Compare Models
-##Graphically show top performers
-
 ```{r Read in data}
 data=read.csv("loan_data_cleaned.csv")
 
@@ -139,6 +135,7 @@ knnRMSE
 Comparison of all Models
 
 ```{r All Models}
-results=c(1.11794, 1.12580, 2.23680, 1.84762, 1.11946, 1.94660)
+results=c()
 barplot(results, main="Carseat loan_status",ylab="RMSE",names.arg=c("Lasso", "Ridge", 
                                                           "Tree", "RF", "OLS", "KNN"))
+```
